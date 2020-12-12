@@ -18,3 +18,7 @@ def usersDetail(id):
         return UserController.update(id)
     elif request.method == 'DELETE':
         return UserController.delete(id)
+
+@app.route('/login', methods=['POST'])
+def login():
+    return UserController.login()

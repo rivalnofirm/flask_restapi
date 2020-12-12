@@ -82,3 +82,20 @@ def delete(id):
         return response.ok('', 'Successfully delete data!')
     except Exception as e:
         print(e)
+
+def login():
+    try:
+        email = request.json['email']
+        password = request.json['password']
+
+        user = Users.query.filter_by(email=email).first()
+        if not user:
+            return response.badRequest([], 'user tidak ditemukan')
+        
+        if not user.checkPassword(password):
+            return response.badRequest([], 'Password salah')
+
+        data = singleTransform(user)
+        return response.ok(data, "")
+    except Exception as e:
+        print(e)

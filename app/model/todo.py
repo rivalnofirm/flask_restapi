@@ -10,6 +10,7 @@ class Todos(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.BigInteger, db.ForeignKey(Users.id))
+    users = db.relationship("Users", backref="user_id")
 
     def __repr__(self):
         return '<Todo {}>'.format(self.todo)
