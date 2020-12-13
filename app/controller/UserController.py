@@ -1,7 +1,10 @@
 from app.model.user import Users
 from app import response, app, db
+import datetime
 from flask import request
+from flask_jwt_extended import *
 
+@jwt_required
 def index():
     try:
         users = Users.query.all()
@@ -10,31 +13,6 @@ def index():
     except Exception as e:
         print(e)
 
-def transform(users):
-    array = []
-    for i in users:
-        array.append(singleTransform(i))
-    return array
-
-def show(id):
-    try:
-        users = Users.query.filter_by(id=id).first()
-        if not users:
-            return response.badRequest([], 'User tidak di temukan')
-
-        data = singleTransform(users)
-        return response.ok(data, "")
-    except Exception as e:
-        print(e)
-
-def singleTransform(users):
-    data = {
-        'id': users.id,
-        'name': users.name,
-        'email': users.email
-    }
-
-    return data
 
 def store():
     try:
@@ -47,11 +25,13 @@ def store():
         db.session.add(users)
         db.session.commit()
 
-        return response.ok('', 'Data berhasil ditambahkan')
+        return response.ok('', 'Successfully create data!')
 
     except Exception as e:
         print(e)
 
+
+@jwt_required
 def update(id):
     try:
         name = request.json['name']
@@ -70,6 +50,21 @@ def update(id):
     except Exception as e:
         print(e)
 
+
+@jwt_required
+def show(id):
+    try:
+        users = Users.query.filter_by(id=id).first()
+        if not users:
+            return response.badRequest([], 'Empty....')
+
+        data = singleTransform(users)
+        return response.ok(data, "")
+    except Exception as e:
+        print(e)
+
+
+@jwt_required
 def delete(id):
     try:
         user = Users.query.filter_by(id=id).first()
@@ -83,6 +78,7 @@ def delete(id):
     except Exception as e:
         print(e)
 
+
 def login():
     try:
         email = request.json['email']
@@ -90,12 +86,62 @@ def login():
 
         user = Users.query.filter_by(email=email).first()
         if not user:
-            return response.badRequest([], 'user tidak ditemukan')
-        
+            return response.badRequest([], 'Email tidak di temukan')
+
         if not user.checkPassword(password):
             return response.badRequest([], 'Password salah')
 
-        data = singleTransform(user)
-        return response.ok(data, "")
+        data = singleTransform(user, withTodo=False)
+        expires = datetime.timedelta(days=1)
+        expires_refresh = datetime.timedelta(days=3)
+        access_token = create_access_token(data, fresh=True, expires_delta=expires)
+        refresh_token = create_refresh_token(data, expires_delta=expires_refresh)
+
+        return response.ok({
+            "data": data,
+            "token_access": access_token,
+            "token_refresh": refresh_token,
+        }, "")
     except Exception as e:
         print(e)
+
+
+@jwt_refresh_token_required
+def refresh():
+    try:
+        user = get_jwt_identity()
+        new_token = create_access_token(identity=user, fresh=False)
+
+        return response.ok({
+            "token_access": new_token
+        }, "")
+
+    except Exception as e:
+        print(e)
+
+
+def transform(users):
+    array = []
+    for i in users:
+        array.append(singleTransform(i))
+    return array
+
+
+def singleTransform(users, withTodo=True):
+    data = {
+        'id': users.id,
+        'name': users.name,
+        'email': users.email,
+    }
+
+    if withTodo:
+        todos = []
+        for i in users.todos:
+            todos.append({
+                'id': i.id,
+                'todo': i.todo,
+                'description': i.description,
+            })
+        data['todos'] = todos
+
+    return data

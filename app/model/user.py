@@ -10,6 +10,7 @@ class Users(db.Model):
     password = db.Column(db.String(225), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    todos = db.relationship("Todos", lazy='select', backref=db.backref('todos', lazy='joined'))
 
     def __repr__(self):
         return '<User {}>'.format(self.name)

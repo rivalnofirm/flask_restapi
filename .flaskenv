@@ -1,4 +1,7 @@
 FLASK_APP = main.py
+
+JWT_SECRET=xxxxxx
+
 DB_HOST=localhost
 DB_DATABASE=flask
 DB_USERNAME=root
